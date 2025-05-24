@@ -1,11 +1,11 @@
-import { auth } from "@/lib/firebase"; // Assuming auth is exported from firebase.ts
-import { currentUserAtom, idTokenAtom } from "@/store/globalAtoms";
-import { store } from "@/store/store"; // Assuming your Jotai store instance is exported as 'store'
+// src/services/authService.ts
+import { auth } from "@/lib/firebase";
+// currentUserAtom, idTokenAtom, store のインポートを削除します
 import {
 	EmailAuthProvider,
-	type User, // Import User type
+	type User,
 	createUserWithEmailAndPassword,
-	onAuthStateChanged,
+	// onAuthStateChanged, // ここでは不要になる可能性が高いです
 	reauthenticateWithCredential,
 	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
@@ -13,9 +13,6 @@ import {
 	updatePassword,
 } from "firebase/auth";
 
-/**
- * Signs up a new user with email and password.
- */
 export const signUpWithEmailPassword = async (
 	email: string,
 	password: string,
@@ -26,20 +23,14 @@ export const signUpWithEmailPassword = async (
 			email,
 			password,
 		);
-		const user = userCredential.user;
-		const idToken = await user.getIdToken();
-		store.set(currentUserAtom, user);
-		store.set(idTokenAtom, idToken);
-		return { user, idToken };
+		// Jotai atomの更新処理は削除します (AuthStateSynchronizerが担当します)
+		return userCredential;
 	} catch (error) {
 		console.error("Error signing up:", error);
-		throw error; // Re-throw to be caught by the calling UI
+		throw error;
 	}
 };
 
-/**
- * Signs in an existing user with email and password.
- */
 export const signInWithEmailPassword = async (
 	email: string,
 	password: string,
@@ -50,34 +41,25 @@ export const signInWithEmailPassword = async (
 			email,
 			password,
 		);
-		const user = userCredential.user;
-		const idToken = await user.getIdToken();
-		store.set(currentUserAtom, user);
-		store.set(idTokenAtom, idToken);
-		return { user, idToken };
+		// Jotai atomの更新処理は削除します
+		return userCredential;
 	} catch (error) {
 		console.error("Error signing in:", error);
 		throw error;
 	}
 };
 
-/**
- * Signs out the current user.
- */
 export const signOutUser = async () => {
 	try {
 		await signOut(auth);
-		store.set(currentUserAtom, null);
-		store.set(idTokenAtom, null);
+		// Jotai atomの更新処理は削除します
 	} catch (error) {
 		console.error("Error signing out:", error);
 		throw error;
 	}
 };
 
-/**
- * Sends a password reset email to the given email address.
- */
+// sendPasswordReset と updateUserPassword はJotaiの認証atomを直接操作しないため、そのままで問題ありません
 export const sendPasswordReset = async (email: string) => {
 	try {
 		await sendPasswordResetEmail(auth, email);
@@ -87,10 +69,6 @@ export const sendPasswordReset = async (email: string) => {
 	}
 };
 
-/**
- * Updates the current user's password.
- * Requires re-authentication.
- */
 export const updateUserPassword = async (
 	currentPassword_provided: string,
 	newPassword_provided: string,
@@ -99,10 +77,7 @@ export const updateUserPassword = async (
 	if (!user || !user.email) {
 		throw new Error("User not authenticated or email not available.");
 	}
-
-	// Typescript workaround: firebase user.email can be null
 	const email = user.email;
-
 	try {
 		const credential = EmailAuthProvider.credential(
 			email,
@@ -116,28 +91,17 @@ export const updateUserPassword = async (
 	}
 };
 
-/**
- * Sets up an observer for changes to the user's sign-in state.
- * Updates Jotai atoms (currentUserAtom, idTokenAtom) accordingly.
- *
- * @param callback - An optional callback function that receives the User object.
- *                   It's called whenever the auth state changes.
- * @returns An unsubscribe function from Firebase's onAuthStateChanged.
- */
+// 以前の onAuthStateChangedListener は AuthStateSynchronizer に役割が移行したため、
+// このファイルからは削除するか、他の目的で使用している場合はJotai関連の処理のみ削除してください。
+/*
 export const onAuthStateChangedListener = (
 	callback?: (user: User | null) => void,
 ) => {
 	return onAuthStateChanged(auth, async (user) => {
-		if (user) {
-			store.set(currentUserAtom, user);
-			const idToken = await user.getIdToken();
-			store.set(idTokenAtom, idToken);
-		} else {
-			store.set(currentUserAtom, null);
-			store.set(idTokenAtom, null);
-		}
+		// Jotaiの更新処理は削除します
 		if (callback) {
 			callback(user);
 		}
 	});
 };
+*/
