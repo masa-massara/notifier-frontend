@@ -1,9 +1,7 @@
 # .husky/pre-commit
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
 echo "Running Biome check before commit..."
-bun run check # package.json に定義した "check" スクリプトを実行
+npx biome check --write ./src
 if [ $? -ne 0 ]; then
   echo "Biome check failed. Please fix errors before committing."
   exit 1
