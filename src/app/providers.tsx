@@ -1,59 +1,38 @@
-// src/app/providers.tsx
 "use client";
 
-import { Toaster } from "@/components/ui/toaster";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Provider as JotaiProvider, createStore, useSetAtom } from "jotai";
-import { queryClientAtom } from "jotai-tanstack-query";
-import type React from "react";
-import { useEffect, useState } from "react";
-import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth"; // Firebaseから直接インポートします
-import { auth } from "@/lib/firebase"; // Firebase authインスタンス
-import { currentUserAtom, idTokenAtom } from "@/store/globalAtoms"; // 正しいatomをインポートします
-
-// 以前authServiceにあったonAuthStateChangedListenerはここで直接扱います
-
-const sharedQueryClient = new QueryClient();
-
-// Firebase Authの状態をJotai atomと同期させるコンポーネント
-const AuthStateSynchronizer = () => {
-	const setCurrentUser = useSetAtom(currentUserAtom);
-	const setIdToken = useSetAtom(idTokenAtom);
-
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
-			if (user) {
-				// currentUserAtomがFirebaseのUser型を期待していることを確認します
-				setCurrentUser(user);
-				const token = await user.getIdToken();
-				setIdToken(token);
-			} else {
-				setCurrentUser(null);
-				setIdToken(null);
-			}
-		});
-		return () => unsubscribe(); // コンポーネントがアンマウントされる際に解除します
-	}, [setCurrentUser, setIdToken]);
-
-	return null; // このコンポーネント自体は画面には何もレンダリングしません
-};
+import { Provider as JotaiProvider } from "jotai";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Provider as QueryClientJotaiProvider } from "jotai-tanstack-query";
+import { useAtomValue } from "jotai";
+import { customQueryClientAtom } from "@/store/globalAtoms"; // Assuming customQueryClientAtom is exported from here
+import React, { useEffect } from "react"; // Added useEffect
+import { onAuthStateChangedListener } from "@/services/authService"; // Added import
+import { Toaster } from "@/components/ui/toaster"; // Added import for Toaster
 
 export function Providers({ children }: { children: React.ReactNode }) {
-	const [jotaiStore] = useState(() => {
-		const store = createStore();
-		store.set(queryClientAtom, sharedQueryClient); // TanStack Query用のatomも初期化します
-		return store;
-	});
+  const queryClient = useAtomValue(customQueryClientAtom);
 
-	// authServiceからonAuthStateChangedListenerを呼び出すuseEffectは削除します
+  // Effect to listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChangedListener();
+    // Cleanup function to unsubscribe when the component unmounts
+    return () => unsubscribe();
+  }, []); // Empty dependency array ensures this runs only once on mount
 
-	return (
-		<JotaiProvider store={jotaiStore}>
-			<QueryClientProvider client={sharedQueryClient}>
-				<AuthStateSynchronizer /> {/* AuthStateSynchronizerをここに追加します */}
-				{children}
-				<Toaster />
-			</QueryClientProvider>
-		</JotaiProvider>
-	);
+  return (
+    <JotaiProvider>
+      <QueryClientProvider client={queryClient}>
+        {/* 
+          The QueryClientJotaiProvider is used to synchronize the QueryClient 
+          instance between Jotai and TanStack Query. This allows you to use 
+          Jotai atoms to interact with the QueryClient, such as reading query 
+          state or triggering refetches.
+        */}
+        <QueryClientJotaiProvider>
+          {children}
+          <Toaster /> {/* Added Toaster for shadcn/ui toasts */}
+        </QueryClientJotaiProvider>
+      </QueryClientProvider>
+    </JotaiProvider>
+  );
 }

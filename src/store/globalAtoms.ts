@@ -1,13 +1,15 @@
-import type { User } from "firebase/auth"; // FirebaseのUser型をインポートしてると仮定
-// src/store/globalAtoms.ts (修正案)
 import { atom } from "jotai";
+import { QueryClient } from "@tanstack/react-query";
+import { queryClientAtom } from "jotai-tanstack-query";
+import { User } from "firebase/auth"; // Assuming User type is imported from firebase/auth
 
-// 現在のユーザー情報を保持するAtom
+// Atom for storing the current user object
 export const currentUserAtom = atom<User | null>(null);
 
-// Firebase IDトークンを保持するAtom
+// Atom for storing the Firebase ID token
 export const idTokenAtom = atom<string | null>(null);
 
-// customQueryClientAtom の定義はここからは削除するか、
-// もし他の場所で特別な QueryClient インスタンスを使いたい場合は別途 atom(new QueryClient()) で定義する。
-// 今回のケースでは、providers.tsx でライブラリ標準の queryClientAtom を使うことを推奨するで。
+// Atom for TanStack Query QueryClient
+// This atom is exported directly from jotai-tanstack-query
+// and initialized with a new QueryClient instance.
+export const customQueryClientAtom = queryClientAtom(new QueryClient());

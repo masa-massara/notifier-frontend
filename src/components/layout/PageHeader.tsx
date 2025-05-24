@@ -1,15 +1,15 @@
-import type React from "react";
+import React from "react";
 
 interface PageHeaderProps {
-	title: string;
-	actions?: React.ReactNode; // Optional actions
+  title: string;
+  actions?: React.ReactNode; // Optional actions
 }
 
 export default function PageHeader({ title, actions }: PageHeaderProps) {
-	return (
-		<div className="flex items-center justify-between mb-6">
-			<h1 className="text-2xl font-semibold">{title}</h1>
-			{actions && <div>{actions}</div>}
-		</div>
-	);
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <h1 className="text-2xl font-semibold">{title}</h1>
+      {actions && <div>{actions}</div>}
+    </div>
+  );
 }
