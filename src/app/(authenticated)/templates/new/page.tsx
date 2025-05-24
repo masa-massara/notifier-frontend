@@ -98,7 +98,7 @@ function NewTemplatePage() {
 		}
 	);
 
-	const selecteduserNotionIntegrationId = watch("userNotionIntegrationId");
+	const selectedNotionIntegrationId = watch("userNotionIntegrationId");
 	const selectedNotionDatabaseId = watch("notionDatabaseId"); // Added
 
 	const {
@@ -106,14 +106,14 @@ function NewTemplatePage() {
 		isLoading: isLoadingNotionDatabases,
 		error: errorNotionDatabases,
 	} = useQuery<NotionDatabase[], Error>({
-		queryKey: ["notionDatabases", selecteduserNotionIntegrationId],
+		queryKey: ["notionDatabases", selectedNotionIntegrationId],
 		queryFn: () => {
-			if (!selecteduserNotionIntegrationId) {
+			if (!selectedNotionIntegrationId) {
 				return Promise.resolve([]); // Or handle as appropriate
 			}
-			return getNotionDatabases(selecteduserNotionIntegrationId);
+			return getNotionDatabases(selectedNotionIntegrationId);
 		},
-		enabled: !!selecteduserNotionIntegrationId,
+		enabled: !!selectedNotionIntegrationId,
 	});
 
 	const { // Added Db Properties Query
@@ -121,17 +121,17 @@ function NewTemplatePage() {
 		isLoading: isLoadingDbProperties,
 		error: errorDbProperties,
 	} = useQuery<NotionProperty[], Error>({
-		queryKey: ["databaseProperties",selecteduserNotionIntegrationId, selectedNotionDatabaseId],
-		queryFn: () => getNotionDatabaseProperties(selecteduserNotionIntegrationId as string, selectedNotionDatabaseId as string),
-		enabled: !!selecteduserNotionIntegrationId && !!selectedNotionDatabaseId,
+		queryKey: ["databaseProperties",selectedNotionIntegrationId, selectedNotionDatabaseId],
+		queryFn: () => getNotionDatabaseProperties(selectedNotionIntegrationId as string, selectedNotionDatabaseId as string),
+		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId,
 	});
 
 	useEffect(() => {
-		if (selecteduserNotionIntegrationId) {
+		if (selectedNotionIntegrationId) {
 			setValue("notionDatabaseId", "", { shouldValidate: true });
 			setValue("conditions", [], { shouldValidate: false }); // Added
 		}
-	}, [selecteduserNotionIntegrationId, setValue]);
+	}, [selectedNotionIntegrationId, setValue]);
 
 	useEffect(() => { // Added
 		if (selectedNotionDatabaseId) {
@@ -239,7 +239,7 @@ function NewTemplatePage() {
 										onValueChange={field.onChange}
 										value={field.value}
 										disabled={
-											!selecteduserNotionIntegrationId ||
+											!selectedNotionIntegrationId ||
 											isLoadingNotionDatabases ||
 											mutation.isPending
 										}
@@ -247,7 +247,7 @@ function NewTemplatePage() {
 										<SelectTrigger>
 											<SelectValue
 												placeholder={
-													!selecteduserNotionIntegrationId
+													!selectedNotionIntegrationId
 														? "Select a Notion Integration first"
 														: "Select a Notion Database"
 												}

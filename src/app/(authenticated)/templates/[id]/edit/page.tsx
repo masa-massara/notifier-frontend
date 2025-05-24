@@ -37,11 +37,16 @@ const formSchema = z.object({
 	name: z.string().min(1, { message: "Template name is required." }),
 	userNotionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
 	notionDatabaseId: z.string().min(1, { message: "Notion Database ID is required." }),
-	conditions: z.array(z.object({ // Added
-		propertyId: z.string().min(1, "Property selection is required."),
-		operator: z.string().min(1, "Operator selection is required."),
-		value: z.string().min(1, "Value is required."),
-	})).optional(),
+	conditions: z
+		.array(
+			z.object({
+				// Added
+				propertyId: z.string().min(1, "Property selection is required."),
+				operator: z.string().min(1, "Operator selection is required."),
+				value: z.string().min(1, "Value is required."),
+			})
+		)
+		.optional(),
 	body: z.string().min(1, { message: "Message body is required." }),
 	destinationId: z.string().min(1, { message: "Destination is required." }),
 });
@@ -76,7 +81,8 @@ function EditTemplatePage() {
 		},
 	});
 
-	const { fields, append, remove, replace } = useFieldArray({ // Added (with replace)
+	const { fields, append, remove, replace } = useFieldArray({
+		// Added (with replace)
 		control,
 		name: "conditions",
 	});
@@ -106,7 +112,7 @@ function EditTemplatePage() {
 		}
 	);
 
-	const selecteduserNotionIntegrationId = watch("userNotionIntegrationId");
+	const selectedNotionIntegrationId = watch("userNotionIntegrationId");
 	const selectedNotionDatabaseId = watch("notionDatabaseId"); // Added
 
 	const {
@@ -114,35 +120,49 @@ function EditTemplatePage() {
 		isLoading: isLoadingNotionDatabases,
 		error: errorNotionDatabases,
 	} = useQuery<NotionDatabase[], Error>({
-		queryKey: ["notionDatabases", selecteduserNotionIntegrationId],
+		queryKey: ["notionDatabases", selectedNotionIntegrationId],
 		queryFn: () => {
-			if (!selecteduserNotionIntegrationId) {
+			if (!selectedNotionIntegrationId) {
 				return Promise.resolve([]);
 			}
-			return getNotionDatabases(selecteduserNotionIntegrationId);
+			return getNotionDatabases(selectedNotionIntegrationId);
 		},
-		enabled: !!selecteduserNotionIntegrationId,
+		enabled: !!selectedNotionIntegrationId,
 	});
 
-	const { // Added Db Properties Query
+	const {
+		// Added Db Properties Query
 		data: databaseProperties,
 		isLoading: isLoadingDbProperties,
 		error: errorDbProperties,
 	} = useQuery<NotionProperty[], Error>({
-		queryKey: ["databaseProperties", selecteduserNotionIntegrationId, selectedNotionDatabaseId],
-		queryFn: () => getNotionDatabaseProperties(selecteduserNotionIntegrationId as string, selectedNotionDatabaseId as string),
-		enabled: !!selecteduserNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Ensure template is loaded
+		queryKey: ["databaseProperties", selectedNotionIntegrationId, selectedNotionDatabaseId],
+		queryFn: () =>
+			getNotionDatabaseProperties(
+				selectedNotionIntegrationId as string,
+				selectedNotionDatabaseId as string
+			),
+		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Ensure template is loaded
 	});
 
 	useEffect(() => {
-		if (template && selecteduserNotionIntegrationId && selecteduserNotionIntegrationId !== template.userNotionIntegrationId) {
+		if (
+			template &&
+			selectedNotionIntegrationId &&
+			selectedNotionIntegrationId !== template.userNotionIntegrationId
+		) {
 			setValue("notionDatabaseId", "", { shouldValidate: true });
 			setValue("conditions", [], { shouldValidate: false }); // Added: Clear conditions
 		}
-	}, [selecteduserNotionIntegrationId, setValue, template]);
+	}, [selectedNotionIntegrationId, setValue, template]);
 
-	useEffect(() => { // Added: Clear conditions if database changes from original template
-		if (template && selectedNotionDatabaseId && selectedNotionDatabaseId !== template.notionDatabaseId) {
+	useEffect(() => {
+		// Added: Clear conditions if database changes from original template
+		if (
+			template &&
+			selectedNotionDatabaseId &&
+			selectedNotionDatabaseId !== template.notionDatabaseId
+		) {
 			setValue("conditions", [], { shouldValidate: false });
 		}
 	}, [selectedNotionDatabaseId, setValue, template]);
@@ -295,7 +315,7 @@ function EditTemplatePage() {
 										}}
 										value={field.value} // Ensures the value is controlled by RHF
 										disabled={
-											!selecteduserNotionIntegrationId ||
+											!selectedNotionIntegrationId ||
 											isLoadingNotionDatabases ||
 											mutation.isPending ||
 											isLoadingTemplate // Disable if template still loading integration ID
@@ -304,7 +324,7 @@ function EditTemplatePage() {
 										<SelectTrigger>
 											<SelectValue
 												placeholder={
-													!selecteduserNotionIntegrationId
+													!selectedNotionIntegrationId
 														? "Select a Notion Integration first"
 														: "Select a Notion Database"
 												}
@@ -321,22 +341,30 @@ function EditTemplatePage() {
 												</SelectItem>
 											) : !isLoadingNotionDatabases &&
 											  notionDatabases &&
-											  notionDatabases.length === 0 && selecteduserNotionIntegrationId ? (
+											  notionDatabases.length === 0 &&
+											  selectedNotionIntegrationId ? (
 												<SelectItem value="no_db" disabled>
 													No databases found for this integration.
 												</SelectItem>
 											) : (
 												notionDatabases?.map((database) => (
-													<SelectItem key={database.id} value={database.id}>
+													<SelectItem
+														key={database.id}
+														value={database.id}
+													>
 														{database.name}
 													</SelectItem>
 												))
 											)}
-											{!selecteduserNotionIntegrationId && !isLoadingNotionDatabases && (
-												<SelectItem value="select_integration_first" disabled>
-													Select a Notion Integration first
-												</SelectItem>
-											)}
+											{!selectedNotionIntegrationId &&
+												!isLoadingNotionDatabases && (
+													<SelectItem
+														value="select_integration_first"
+														disabled
+													>
+														Select a Notion Integration first
+													</SelectItem>
+												)}
 										</SelectContent>
 									</Select>
 								)}
@@ -364,7 +392,8 @@ function EditTemplatePage() {
 					<CardHeader>
 						<CardTitle>2. Notification Conditions</CardTitle>
 						<CardDescription>
-							Define conditions based on Notion database properties to trigger notifications.
+							Define conditions based on Notion database properties to trigger
+							notifications.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
@@ -378,16 +407,24 @@ function EditTemplatePage() {
 							!errorDbProperties &&
 							selectedNotionDatabaseId &&
 							(!databaseProperties || databaseProperties.length === 0) && (
-								<p>No properties found for this database or integration not fully loaded.</p>
+								<p>
+									No properties found for this database or integration not fully
+									loaded.
+								</p>
 							)}
 
 						{fields.map((field, index) => (
-							<div key={field.id} className="flex items-start space-x-2 p-2 border rounded-md">
+							<div
+								key={field.id}
+								className="flex items-start space-x-2 p-2 border rounded-md"
+							>
 								<div className="flex-1 space-y-2">
 									<div className="gap-2 grid grid-cols-1 md:grid-cols-3">
 										{/* Property Select */}
 										<div className="space-y-1">
-											<Label htmlFor={`conditions.${index}.propertyId`}>Property</Label>
+											<Label htmlFor={`conditions.${index}.propertyId`}>
+												Property
+											</Label>
 											<Controller
 												name={`conditions.${index}.propertyId`}
 												control={control}
@@ -395,14 +432,22 @@ function EditTemplatePage() {
 													<Select
 														onValueChange={controllerField.onChange}
 														value={controllerField.value}
-														disabled={!databaseProperties || isLoadingDbProperties || mutation.isPending || isLoadingTemplate}
+														disabled={
+															!databaseProperties ||
+															isLoadingDbProperties ||
+															mutation.isPending ||
+															isLoadingTemplate
+														}
 													>
 														<SelectTrigger>
 															<SelectValue placeholder="Select property" />
 														</SelectTrigger>
 														<SelectContent>
 															{databaseProperties?.map((prop) => (
-																<SelectItem key={prop.id} value={prop.id}>
+																<SelectItem
+																	key={prop.id}
+																	value={prop.id}
+																>
 																	{prop.name} ({prop.type})
 																</SelectItem>
 															))}
@@ -411,13 +456,20 @@ function EditTemplatePage() {
 												)}
 											/>
 											{errors.conditions?.[index]?.propertyId && (
-												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.propertyId?.message}</p>
+												<p className="text-red-600 text-xs">
+													{
+														errors.conditions?.[index]?.propertyId
+															?.message
+													}
+												</p>
 											)}
 										</div>
 
 										{/* Operator Select */}
 										<div className="space-y-1">
-											<Label htmlFor={`conditions.${index}.operator`}>Operator</Label>
+											<Label htmlFor={`conditions.${index}.operator`}>
+												Operator
+											</Label>
 											<Controller
 												name={`conditions.${index}.operator`}
 												control={control}
@@ -425,29 +477,43 @@ function EditTemplatePage() {
 													<Select
 														onValueChange={controllerField.onChange}
 														value={controllerField.value}
-														disabled={mutation.isPending || isLoadingTemplate}
+														disabled={
+															mutation.isPending || isLoadingTemplate
+														}
 													>
 														<SelectTrigger>
 															<SelectValue placeholder="Select operator" />
 														</SelectTrigger>
 														<SelectContent>
-															<SelectItem value="equals">Equals</SelectItem>
-															<SelectItem value="not_equals">Not Equals</SelectItem>
-															<SelectItem value="contains">Contains</SelectItem>
-															<SelectItem value="not_contains">Does Not Contain</SelectItem>
+															<SelectItem value="equals">
+																Equals
+															</SelectItem>
+															<SelectItem value="not_equals">
+																Not Equals
+															</SelectItem>
+															<SelectItem value="contains">
+																Contains
+															</SelectItem>
+															<SelectItem value="not_contains">
+																Does Not Contain
+															</SelectItem>
 															{/* Add more operators as needed */}
 														</SelectContent>
 													</Select>
 												)}
 											/>
 											{errors.conditions?.[index]?.operator && (
-												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.operator?.message}</p>
+												<p className="text-red-600 text-xs">
+													{errors.conditions?.[index]?.operator?.message}
+												</p>
 											)}
 										</div>
 
 										{/* Value Input */}
 										<div className="space-y-1">
-											<Label htmlFor={`conditions.${index}.value`}>Value</Label>
+											<Label htmlFor={`conditions.${index}.value`}>
+												Value
+											</Label>
 											<Controller
 												name={`conditions.${index}.value`}
 												control={control}
@@ -455,12 +521,16 @@ function EditTemplatePage() {
 													<Input
 														{...controllerField}
 														placeholder="Enter value"
-														disabled={mutation.isPending || isLoadingTemplate}
+														disabled={
+															mutation.isPending || isLoadingTemplate
+														}
 													/>
 												)}
 											/>
 											{errors.conditions?.[index]?.value && (
-												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.value?.message}</p>
+												<p className="text-red-600 text-xs">
+													{errors.conditions?.[index]?.value?.message}
+												</p>
 											)}
 										</div>
 									</div>
@@ -485,18 +555,22 @@ function EditTemplatePage() {
 								!selectedNotionDatabaseId ||
 								isLoadingDbProperties ||
 								!!errorDbProperties ||
-								(!databaseProperties || databaseProperties.length === 0) ||
-								mutation.isPending || isLoadingTemplate
+								!databaseProperties ||
+								databaseProperties.length === 0 ||
+								mutation.isPending ||
+								isLoadingTemplate
 							}
 						>
 							Add Condition
 						</Button>
 						{errors.conditions?.root && (
-								<p className="text-red-600 text-sm">{errors.conditions.root.message}</p>
+							<p className="text-red-600 text-sm">{errors.conditions.root.message}</p>
 						)}
-						{ Array.isArray(errors.conditions) && errors.conditions.length === 0 && errors.conditions?.message && (
-							 <p className="text-red-600 text-sm">{errors.conditions.message}</p>
-						)}
+						{Array.isArray(errors.conditions) &&
+							errors.conditions.length === 0 &&
+							errors.conditions?.message && (
+								<p className="text-red-600 text-sm">{errors.conditions.message}</p>
+							)}
 					</CardContent>
 				</Card>
 

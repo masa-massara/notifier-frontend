@@ -6,6 +6,8 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { useState } from "react"; // Added
+import { Eye, EyeOff } from "lucide-react"; // Added
 import {
   Card,
   CardContent,
@@ -30,6 +32,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false); // Added
   const {
     register,
     handleSubmit,
@@ -82,11 +85,28 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register("password")}
-                />
+                <div className="relative flex items-center"> {/* Added wrapper */}
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"} // Updated type
+                    {...register("password")}
+                    className="pr-10" // Added padding for icon
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 px-3" // Positioned button
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
                 {errors.password && (
                   <p className="text-sm text-red-600">
                     {errors.password.message}
