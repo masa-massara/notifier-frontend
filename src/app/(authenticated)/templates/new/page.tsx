@@ -1,19 +1,26 @@
 "use client";
 
-import withAuth from "@/components/auth/withAuth";
-import AppLayout from "@/components/layout/AppLayout";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// AppLayout is now applied by the group's layout.tsx
 import PageHeader from "@/components/layout/PageHeader";
+// import withAuth from "@/components/auth/withAuth"; // HOC Removed
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
+	// CardFooter, // Not used, removing
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
 	SelectContent,
@@ -21,30 +28,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { getDestinations } from "@/services/destinationService";
-import { getNotionIntegrations } from "@/services/notionIntegrationService";
 import { createTemplate } from "@/services/templateService";
-import type { Destination } from "@/types/destination";
-import type { NotionIntegration } from "@/types/notionIntegration";
+import { getUserNotionIntegrations } from "@/services/userNotionIntegrationService";
+import { getDestinations } from "@/services/destinationService";
 import type { CreateTemplateData } from "@/types/template";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
+import type { NotionIntegration } from "@/types/notionIntegration";
+import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
 	name: z.string().min(1, { message: "Template name is required." }),
-	notionIntegrationId: z
-		.string()
-		.min(1, { message: "Notion integration is required." }),
-	notionDatabaseId: z
-		.string()
-		.min(1, { message: "Notion Database ID is required." }),
-	// conditions: z.any().optional(), // Placeholder, not actively used in form yet
+	notionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
+	notionDatabaseId: z.string().min(1, { message: "Notion Database ID is required." }),
 	messageBody: z.string().min(1, { message: "Message body is required." }),
 	destinationId: z.string().min(1, { message: "Destination is required." }),
 });
@@ -57,7 +52,7 @@ function NewTemplatePage() {
 	const queryClient = useQueryClient();
 
 	const {
-		control, // For Controller component with Select
+		control,
 		register,
 		handleSubmit,
 		formState: { errors, isSubmitting },
@@ -72,29 +67,26 @@ function NewTemplatePage() {
 		},
 	});
 
-	// Fetch Notion Integrations for Select
 	const { data: notionIntegrations, isLoading: isLoadingNotion } = useQuery<
 		NotionIntegration[],
 		Error
 	>({
 		queryKey: ["notionIntegrations"],
-		queryFn: getNotionIntegrations,
+		queryFn: getUserNotionIntegrations,
 	});
 
-	// Fetch Destinations for Select
-	const { data: destinations, isLoading: isLoadingDestinations } = useQuery<
-		Destination[],
-		Error
-	>({
-		queryKey: ["destinations"],
-		queryFn: getDestinations,
-	});
+	const { data: destinations, isLoading: isLoadingDestinations } = useQuery<Destination[], Error>(
+		{
+			queryKey: ["destinations"],
+			queryFn: getDestinations,
+		}
+	);
 
 	const mutation = useMutation({
 		mutationFn: (formData: FormData) => {
 			const templateData: CreateTemplateData = {
 				...formData,
-				conditions: {}, // Placeholder for now
+				conditions: {},
 			};
 			return createTemplate(templateData);
 		},
@@ -120,10 +112,9 @@ function NewTemplatePage() {
 	};
 
 	return (
-		<AppLayout>
+		<>
 			<PageHeader title="Create New Notification Template" />
 			<form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-				{/* Section 1: Basic Information */}
 				<Card>
 					<CardHeader>
 						<CardTitle>1. Basic Information</CardTitle>
@@ -142,9 +133,7 @@ function NewTemplatePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="notionIntegrationId">
-								Use Notion Integration
-							</Label>
+							<Label htmlFor="notionIntegrationId">Use Notion Integration</Label>
 							<Controller
 								name="notionIntegrationId"
 								control={control}
@@ -168,7 +157,7 @@ function NewTemplatePage() {
 														key={integration.id}
 														value={integration.id}
 													>
-														{integration.name}
+														{integration.integrationName}
 													</SelectItem>
 												))
 											)}
@@ -184,9 +173,7 @@ function NewTemplatePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="notionDatabaseId">
-								Target Notion Database ID
-							</Label>
+							<Label htmlFor="notionDatabaseId">Target Notion Database ID</Label>
 							<Input
 								id="notionDatabaseId"
 								placeholder="Enter the ID of the Notion Database"
@@ -199,13 +186,11 @@ function NewTemplatePage() {
 							)}
 							<p className="text-muted-foreground text-xs">
 								This is the ID of the database you want to monitor for changes.
-								{/* TODO: Replace with dynamic DB selection based on chosen Notion Integration when backend API is ready. */}
 							</p>
 						</div>
 					</CardContent>
 				</Card>
 
-				{/* Section 2: Notification Conditions */}
 				<Card>
 					<CardHeader>
 						<CardTitle>2. Notification Conditions</CardTitle>
@@ -219,7 +204,6 @@ function NewTemplatePage() {
 					</CardContent>
 				</Card>
 
-				{/* Section 3: Notification Message */}
 				<Card>
 					<CardHeader>
 						<CardTitle>3. Notification Message</CardTitle>
@@ -233,19 +217,16 @@ function NewTemplatePage() {
 							{...register("messageBody")}
 						/>
 						{errors.messageBody && (
-							<p className="text-red-600 text-sm">
-								{errors.messageBody.message}
-							</p>
+							<p className="text-red-600 text-sm">{errors.messageBody.message}</p>
 						)}
 						<p className="text-muted-foreground text-xs">
 							Placeholders like {"{PropertyName}"} (e.g. {"{Task Name}"}) and{" "}
-							{"{_pageUrl}"} can be used. Dynamic placeholder suggestions will
-							be added later based on the selected database.
+							{"{_pageUrl}"} can be used. Dynamic placeholder suggestions will be
+							added later based on the selected database.
 						</p>
 					</CardContent>
 				</Card>
 
-				{/* Section 4: Send To */}
 				<Card>
 					<CardHeader>
 						<CardTitle>4. Send To</CardTitle>
@@ -271,10 +252,14 @@ function NewTemplatePage() {
 											</SelectItem>
 										) : (
 											destinations?.map((destination) => (
-												<SelectItem key={destination.id} value={destination.id}>
+												<SelectItem
+													key={destination.id}
+													value={destination.id}
+												>
 													{destination.name ||
 														// biome-ignore lint/style/useTemplate: <explanation>
-														destination.webhookUrl.substring(0, 30) + "..."}
+														destination.webhookUrl.substring(0, 30) +
+															"..."}
 												</SelectItem>
 											))
 										)}
@@ -283,9 +268,7 @@ function NewTemplatePage() {
 							)}
 						/>
 						{errors.destinationId && (
-							<p className="text-red-600 text-sm">
-								{errors.destinationId.message}
-							</p>
+							<p className="text-red-600 text-sm">{errors.destinationId.message}</p>
 						)}
 					</CardContent>
 				</Card>
@@ -301,14 +284,12 @@ function NewTemplatePage() {
 						</Button>
 					</Link>
 					<Button type="submit" disabled={isSubmitting || mutation.isPending}>
-						{isSubmitting || mutation.isPending
-							? "Creating..."
-							: "Create Template"}
+						{isSubmitting || mutation.isPending ? "Creating..." : "Create Template"}
 					</Button>
 				</div>
 			</form>
-		</AppLayout>
+		</>
 	);
 }
 
-export default withAuth(NewTemplatePage);
+export default NewTemplatePage; // HOC Removed

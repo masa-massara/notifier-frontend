@@ -40,7 +40,7 @@ Gitフック: Husky
 アプリ名やロゴ、基本的なテーマカラーは後から容易にカスタマイズ可能な設計とする。
 2.3. API連携方針
 バックエンドAPI（ベースURL: [バックエンドAPIのベースURL、例: /api/v1]）と非同期通信を行う。
-TanStack Query と Jotaiインテグレーション (atomWithQuery, atomsWithMutation) を積極的に活用し、データの取得・更新・キャッシュ管理、ローディング状態管理、エラーハンドリングを一元的に行う。
+TanStack Query と Jotaiインテグレーション (atomWithQuery,) を積極的に活用し、データの取得・更新・キャッシュ管理、ローディング状態管理、エラーハンドリングを一元的に行う。
 APIリクエスト時には、Jotaiで管理するFirebase IDトークンを Authorization: Bearer <IDトークン> ヘッダーに付与する。
 依存関係: 本フロントエンドの一部の機能（特に通知テンプレート作成・編集画面でのNotionデータベース選択やプロパティ選択の理想形）は、Notionデータベースの情報（アクセス可能なデータベース一覧、特定のデータベースのスキーマ）を取得するための新しいバックエンドAPIエンドポイントを必要とする。これらのAPIは既存の docs/api_reference.md には記載されておらず、フロントエンド開発と並行してバックエンド側で設計・実装する必要がある。
 2.4. エラーハンドリング方針
@@ -77,46 +77,82 @@ idTokenAtom:
 更新タイミング: ログイン成功時、トークンリフレッシュ時、ログアウト時。
 queryClientAtom (from jotai-tanstack-query):
 説明: TanStack Queryの QueryClient インスタンスをJotaiのatomとしてラップし、アプリ全体で共有・アクセス可能にする。
-初期化: アプリケーションのルートに近い場所（例: app/providers.tsx）で useHydrateAtoms を使い、カスタム設定を施した QueryClient インスタンスをセットする。
 3.3. プロバイダ設定 (例: app/providers.tsx for Next.js App Router)
 
 TypeScript
 
 
-'use client';
-import { Provider as JotaiProvider } from 'jotai';
-import { useHydrateAtoms } from 'jotai/utils';
-import { queryClientAtom } from 'jotai-tanstack-query';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+// src/app/providers.tsx
+"use client";
 
-// カスタムQueryClientインスタンス (キャッシュ設定などを集約)
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 1, // 1分
-      refetchOnWindowFocus: false, // デフォルトはtrue
-    },
-  },
-});
 
-const QueryClientJotaiProvider = ({ children }: { children: React.ReactNode }) => {
-  useHydrateAtoms([[queryClientAtom, queryClient]]);
-  return <>{children}</>;
+import { Toaster } from "@/components/ui/toaster";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider as JotaiProvider, createStore, useSetAtom } from "jotai";
+import { queryClientAtom } from "jotai-tanstack-query";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth"; // Firebaseから直接インポートします
+import { auth } from "@/lib/firebase"; // Firebase authインスタンス
+import { currentUserAtom, idTokenAtom } from "@/store/globalAtoms"; // 正しいatomをインポートします
+
+
+// 以前authServiceにあったonAuthStateChangedListenerはここで直接扱います
+
+
+const sharedQueryClient = new QueryClient();
+
+
+// Firebase Authの状態をJotai atomと同期させるコンポーネント
+const AuthStateSynchronizer = () => {
+ const setCurrentUser = useSetAtom(currentUserAtom);
+ const setIdToken = useSetAtom(idTokenAtom);
+
+
+ useEffect(() => {
+   const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
+     if (user) {
+       // currentUserAtomがFirebaseのUser型を期待していることを確認します
+       setCurrentUser(user);
+       const token = await user.getIdToken();
+       setIdToken(token);
+     } else {
+       setCurrentUser(null);
+       setIdToken(null);
+     }
+   });
+   return () => unsubscribe(); // コンポーネントがアンマウントされる際に解除します
+ }, [setCurrentUser, setIdToken]);
+
+
+ return null; // このコンポーネント自体は画面には何もレンダリングしません
 };
 
+
 export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <JotaiProvider>
-      <QueryClientProvider client={queryClient}>
-        <QueryClientJotaiProvider>
-          {children}
-        </QueryClientJotaiProvider>
-        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
-      </QueryClientProvider>
-    </JotaiProvider>
-  );
+ const [jotaiStore] = useState(() => {
+   const store = createStore();
+   store.set(queryClientAtom, sharedQueryClient); // TanStack Query用のatomも初期化します
+   return store;
+ });
+
+
+ // authServiceからonAuthStateChangedListenerを呼び出すuseEffectは削除します
+
+
+ return (
+   <JotaiProvider store={jotaiStore}>
+     <QueryClientProvider client={sharedQueryClient}>
+       <AuthStateSynchronizer /> {/* AuthStateSynchronizerをここに追加します */}
+       {children}
+       <Toaster />
+     </QueryClientProvider>
+   </JotaiProvider>
+ );
 }
+
+
+
 
 
 4. 各画面の機能要件、UI要素配置、画面遷移
