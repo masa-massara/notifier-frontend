@@ -1,11 +1,17 @@
+export interface TemplateCondition {
+  propertyId: string;
+  operator: string;
+  value: any; // Keeping as 'any' for now as per instruction
+}
+
 export interface Template {
   id: string;
   name: string;
-  notionIntegrationId: string;
+  userNotionIntegrationId: string;
   destinationId: string;
   notionDatabaseId: string;
-  conditions: string | Record<string, any>; // Placeholder: string or simple object
-  messageBody: string;
+  conditions: TemplateCondition[]; // Updated type
+  body: string;
   updatedAt?: string; // Assuming this might come from the backend for "Last Updated"
   createdAt?: string;
 

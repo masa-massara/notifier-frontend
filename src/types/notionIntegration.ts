@@ -6,3 +6,21 @@ export interface NotionIntegration {
   // e.g., workspace_name, workspace_icon, etc.
   // For now, keeping it simple as per the requirements.
 }
+
+export interface NotionDatabase {
+  id: string;
+  name: string;
+}
+
+export interface NotionPropertyOption {
+  id: string;
+  name: string;
+  color?: string;
+}
+
+export interface NotionProperty {
+  id: string;
+  name: string;
+  type: string;
+  options?: NotionPropertyOption[];
+}

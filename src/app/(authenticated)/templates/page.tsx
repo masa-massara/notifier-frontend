@@ -159,7 +159,7 @@ function TemplatesDashboardPage() {
               <TableRow key={template.id}>
                 <TableCell>{template.name}</TableCell>
                 <TableCell>
-                  {notionIntegrationMap.get(template.notionIntegrationId) || template.notionIntegrationId}
+                  {notionIntegrationMap.get(template.userNotionIntegrationId) || template.userNotionIntegrationId}
                 </TableCell>
                 <TableCell>{template.notionDatabaseId}</TableCell>
                 <TableCell>
@@ -190,12 +190,12 @@ function TemplatesDashboardPage() {
           </TableBody>
         </Table>
       ) : (
-        <div className="text-center py-10">
-          <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+        <div className="py-10 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No notification templates found.</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new template.</p>
+          <h3 className="mt-2 font-medium text-gray-900 text-sm">No notification templates found.</h3>
+          <p className="mt-1 text-gray-500 text-sm">Get started by creating a new template.</p>
           <div className="mt-6">
             <Link href="/templates/new">
               <Button>New Template</Button>
