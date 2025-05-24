@@ -100,6 +100,9 @@ export default function SignUpPage() {
                     {errors.password.message}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  6文字以上の半角英数字で入力してください。
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
