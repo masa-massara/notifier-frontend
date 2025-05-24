@@ -1,5 +1,5 @@
 import { fetchApiClient } from "@/lib/apiClient";
-import { NotionIntegration } from "@/types/notionIntegration";
+import type { NotionIntegration } from "@/types/notionIntegration";
 
 /**
  * Fetches all Notion integrations for the current user.

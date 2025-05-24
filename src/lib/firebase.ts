@@ -2,14 +2,17 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// TODO: Add your Firebase project configuration here
+// JSONファイルから設定を読み込む
+import firebaseConfigFromFile from "../../firebase-config.json"; // パスは実際のファイル位置に合わせて調整してな
+
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your actual API key
-  authDomain: "YOUR_AUTH_DOMAIN", // Replace with your actual auth domain
-  projectId: "YOUR_PROJECT_ID", // Replace with your actual project ID
-  storageBucket: "YOUR_STORAGE_BUCKET", // Replace with your actual storage bucket
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your actual messaging sender ID
-  appId: "YOUR_APP_ID", // Replace with your actual app ID
+	apiKey: firebaseConfigFromFile.apiKey,
+	authDomain: firebaseConfigFromFile.authDomain,
+	projectId: firebaseConfigFromFile.projectId,
+	storageBucket: firebaseConfigFromFile.storageBucket,
+	messagingSenderId: firebaseConfigFromFile.messagingSenderId,
+	appId: firebaseConfigFromFile.appId,
+	measurementId: firebaseConfigFromFile.measurementId,
 };
 
 // Initialize Firebase

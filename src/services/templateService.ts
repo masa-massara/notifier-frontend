@@ -1,5 +1,5 @@
 import { fetchApiClient } from "@/lib/apiClient";
-import { Template, CreateTemplateData, UpdateTemplateData } from "@/types/template";
+import type { Template, CreateTemplateData, UpdateTemplateData } from "@/types/template";
 
 /**
  * Fetches all templates for the current user.

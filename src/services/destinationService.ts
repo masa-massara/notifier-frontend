@@ -1,17 +1,18 @@
 import { fetchApiClient } from "@/lib/apiClient";
-import { Destination } from "@/types/destination";
+import type { Destination } from "@/types/destination";
 
 /**
  * Fetches all destinations for the current user.
  */
 export const getDestinations = async (): Promise<Destination[]> => {
-  const response = await fetchApiClient("/destinations", { // Assuming API base path is already in fetchApiClient
-    method: "GET",
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch destinations");
-  }
-  return response.json();
+	const response = await fetchApiClient("/destinations", {
+		// Assuming API base path is already in fetchApiClient
+		method: "GET",
+	});
+	if (!response.ok) {
+		throw new Error("Failed to fetch destinations");
+	}
+	return response.json();
 };
 
 /**
@@ -19,13 +20,13 @@ export const getDestinations = async (): Promise<Destination[]> => {
  * @param id - The ID of the destination to fetch.
  */
 export const getDestination = async (id: string): Promise<Destination> => {
-  const response = await fetchApiClient(`/destinations/${id}`, {
-    method: "GET",
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch destination with ID ${id}`);
-  }
-  return response.json();
+	const response = await fetchApiClient(`/destinations/${id}`, {
+		method: "GET",
+	});
+	if (!response.ok) {
+		throw new Error(`Failed to fetch destination with ID ${id}`);
+	}
+	return response.json();
 };
 
 /**
@@ -33,20 +34,20 @@ export const getDestination = async (id: string): Promise<Destination> => {
  * @param data - Object containing the name (optional) and webhookUrl for the new destination.
  */
 export const createDestination = async (data: {
-  name?: string;
-  webhookUrl: string;
+	name?: string;
+	webhookUrl: string;
 }): Promise<Destination> => {
-  const response = await fetchApiClient("/destinations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to create destination");
-  }
-  return response.json();
+	const response = await fetchApiClient("/destinations", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+	if (!response.ok) {
+		throw new Error("Failed to create destination");
+	}
+	return response.json();
 };
 
 /**
@@ -55,20 +56,20 @@ export const createDestination = async (data: {
  * @param data - Object containing the name (optional) and webhookUrl to update.
  */
 export const updateDestination = async (
-  id: string,
-  data: { name?: string; webhookUrl: string }
+	id: string,
+	data: { name?: string; webhookUrl: string },
 ): Promise<Destination> => {
-  const response = await fetchApiClient(`/destinations/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to update destination with ID ${id}`);
-  }
-  return response.json();
+	const response = await fetchApiClient(`/destinations/${id}`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+	if (!response.ok) {
+		throw new Error(`Failed to update destination with ID ${id}`);
+	}
+	return response.json();
 };
 
 /**
@@ -76,11 +77,11 @@ export const updateDestination = async (
  * @param id - The ID of the destination to delete.
  */
 export const deleteDestination = async (id: string): Promise<void> => {
-  const response = await fetchApiClient(`/destinations/${id}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to delete destination with ID ${id}`);
-  }
-  // No content expected for a successful DELETE
+	const response = await fetchApiClient(`/destinations/${id}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) {
+		throw new Error(`Failed to delete destination with ID ${id}`);
+	}
+	// No content expected for a successful DELETE
 };

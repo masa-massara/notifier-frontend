@@ -25,7 +25,7 @@ import {
   getDestination,
   updateDestination,
 } from "@/services/destinationService";
-import { Destination } from "@/types/destination";
+import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
   name: z.string().optional(),

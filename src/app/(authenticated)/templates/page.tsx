@@ -29,9 +29,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Template } from "@/types/template";
-import { NotionIntegration } from "@/types/notionIntegration";
-import { Destination } from "@/types/destination";
+import type { Template } from "@/types/template";
+import type { NotionIntegration } from "@/types/notionIntegration";
+import type { Destination } from "@/types/destination";
 
 function TemplatesDashboardPage() {
   const queryClient = useQueryClient();
@@ -53,13 +53,13 @@ function TemplatesDashboardPage() {
   const { data: notionIntegrations } = useQuery<NotionIntegration[], Error>({
     queryKey: ["notionIntegrations"], 
     queryFn: getUserNotionIntegrations, 
-    staleTime: Infinity, 
+    staleTime: Number.POSITIVE_INFINITY, 
   });
 
   const { data: destinations } = useQuery<Destination[], Error>({
     queryKey: ["destinations"],
     queryFn: getDestinations,
-    staleTime: Infinity, 
+    staleTime: Number.POSITIVE_INFINITY, 
   });
 
   const notionIntegrationMap = React.useMemo(() => {

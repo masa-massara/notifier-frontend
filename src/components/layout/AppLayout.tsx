@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import { useAtomValue } from "jotai";
 import { currentUserAtom } from "@/store/globalAtoms";
 import Header from "./Header";

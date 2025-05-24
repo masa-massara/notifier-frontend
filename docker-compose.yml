@@ -18,7 +18,7 @@ services:
       - PORT=3001 # Next.js開発サーバーがリッスンするポート
       # バックエンドAPIのURL (バックエンドがホストの3000で動いてる場合)
       # Docker for Mac/Windows の場合、ホストへは 'host.docker.internal' でアクセスできることが多い
-      - NEXT_PUBLIC_API_BASE_URL=http://host.docker.internal:3000/api/v1
+      - NEXT_PUBLIC_API_BASE_URL=https://notifier-app-953644780816.asia-northeast1.run.app/api/v1
       # ホットリロードのためのポーリング設定 (環境によって必要)
       - WATCHPACK_POLLING=true
     tty: true        # ターミナル操作を可能にする

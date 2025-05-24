@@ -1,7 +1,7 @@
 import { store } from "@/store/store"; // Assuming you have a Jotai store instance exported from here
 import { idTokenAtom } from "@/store/globalAtoms";
 
-const BASE_URL = "/api/v1"; // Placeholder base URL
+const BASE_URL = "https://notifier-app-953644780816.asia-northeast1.run.app/api/v1"; // Placeholder base URL
 
 interface FetchOptions extends RequestInit {
   // You can add custom options here if needed

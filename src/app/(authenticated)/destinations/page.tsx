@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Destination } from "@/types/destination";
+import type { Destination } from "@/types/destination";
 // import { Badge } from "@/components/ui/badge"; // Badge was imported but not used, removing.
 
 // Helper to mask URL

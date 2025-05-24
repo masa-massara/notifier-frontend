@@ -1,84 +1,103 @@
-import { atomsWithQuery, atomsWithMutation } from "jotai-tanstack-query";
+import { atom, type Getter } from "jotai"; // Getter をインポート
+import {
+	atomWithQuery,
+	atomWithMutation,
+	queryClientAtom, // onSuccess の中で queryClient を取得するために使う
+} from "jotai-tanstack-query";
 import { currentUserAtom } from "@/store/globalAtoms";
 import {
-  getUserNotionIntegrations,
-  createUserNotionIntegration,
-  deleteUserNotionIntegration,
+	getUserNotionIntegrations,
+	createUserNotionIntegration,
+	deleteUserNotionIntegration,
 } from "@/services/userNotionIntegrationService";
-import { NotionIntegration } from "@/types/notionIntegration";
-// customQueryClientAtom from globalAtoms is not directly used here as
-// getQueryClient is provided by the mutation callbacks.
+import type { NotionIntegration } from "@/types/notionIntegration";
+import type { QueryClient } from "@tanstack/react-query";
 
-// Atom for fetching user's Notion integrations
-// atomsWithQuery returns a tuple: [dataAtom, statusAtom]
-// We can name them according to convention, e.g., integrationsAtom, integrationsStatusAtom
-export const [userNotionIntegrationsAtom, userNotionIntegrationsQueryAtom] =
-  atomsWithQuery<NotionIntegration[], Error>((get) => ({
-    queryKey: ["userNotionIntegrations", get(currentUserAtom)?.uid],
-    queryFn: async () => {
-      const currentUser = get(currentUserAtom);
-      // The 'enabled' option should prevent this query from running if user is not authenticated.
-      // However, if it somehow runs, this check provides a safeguard.
-      if (!currentUser?.uid) {
-        // console.warn("getUserNotionIntegrations queryFn called without authenticated user.");
-        // Depending on desired behavior, either return empty array or throw.
-        // Throwing an error will put the query in an 'error' state.
-        throw new Error(
-          "User not authenticated. Cannot fetch Notion integrations."
-        );
-      }
-      return getUserNotionIntegrations();
-    },
-    enabled: !!get(currentUserAtom)?.uid, // Fetch only if UID exists
-  }));
-
-// Atom for creating a new Notion integration
-// atomsWithMutation returns a single atom: the mutation atom itself.
-export const [createUserNotionIntegrationMutationAtom] = atomsWithMutation<
-  NotionIntegration, // TData: Type of data returned by the mutationFn
-  { integrationName: string; notionIntegrationToken: string }, // TVariables: Type of variables passed to the mutationFn
-  Error, // TError: Type of error the mutationFn might throw
-  unknown, // TContext: Type of context used in onMutate, onError, onSettled
-  (get: any) => any // TGet (setup function's get): using 'any' based on jotai-tanstack-query examples for simplicity
->((get) => ({ // 'get' here is the Jotai getter from the setup function of atomsWithMutation
-  mutationFn: async (
-    variables: { integrationName: string; notionIntegrationToken: string }
-  ) => {
-    // This function receives the variables when `mutate` is called on the atom's value
-    return createUserNotionIntegration(variables);
-  },
-  onSuccess: (_data, _variables, _context, { getQueryClient }) => {
-    // 'get' from the outer scope (atomsWithMutation's setup function) is available here
-    const queryClient = getQueryClient(); // Access QueryClient via the callback context
-    const currentUser = get(currentUserAtom); // Access other atoms using the 'get' from the setup function
-    if (currentUser?.uid) {
-      queryClient.invalidateQueries({
-        queryKey: ["userNotionIntegrations", currentUser.uid],
-      });
-    }
-  },
-  // onError: (error, variables, context, { getQueryClient, get }) => { /* ... */ },
-  // onSettled: (data, error, variables, context, { getQueryClient, get }) => { /* ... */ },
-}));
-
-// Atom for deleting a Notion integration
-export const [deleteUserNotionIntegrationMutationAtom] = atomsWithMutation<
-  void, // TData: deleteUserNotionIntegration returns void
-  string, // TVariables: integrationId is a string
-  Error,
-  unknown,
-  (get: any) => any
+export const userNotionIntegrationsQueryAtom = atomWithQuery<
+	NotionIntegration[],
+	Error
 >((get) => ({
-  mutationFn: async (integrationId: string) => {
-    return deleteUserNotionIntegration(integrationId);
-  },
-  onSuccess: (_data, _variables, _context, { getQueryClient }) => {
-    const queryClient = getQueryClient();
-    const currentUser = get(currentUserAtom);
-    if (currentUser?.uid) {
-      queryClient.invalidateQueries({
-        queryKey: ["userNotionIntegrations", currentUser.uid],
-      });
-    }
-  },
+	queryKey: ["userNotionIntegrations", get(currentUserAtom)?.uid],
+	queryFn: async () => {
+		const currentUser = get(currentUserAtom);
+		if (!currentUser?.uid) {
+			throw new Error(
+				"User not authenticated. Cannot fetch Notion integrations.",
+			);
+		}
+		return getUserNotionIntegrations();
+	},
+	enabled: !!get(currentUserAtom)?.uid,
 }));
+
+export const userNotionIntegrationsAtom = atom((get) => {
+	const queryResult = get(userNotionIntegrationsQueryAtom);
+	return queryResult?.data;
+});
+
+export const createUserNotionIntegrationMutationAtom = atomWithMutation<
+	NotionIntegration, // TData
+	{ integrationName: string; notionIntegrationToken: string }, // TVariables
+	Error, // TError
+	unknown // TContext
+>(
+	// ↓ この get は atomWithMutation のセットアップ関数に渡される Jotai の Getter
+	(getAtomInSetup) => ({
+		mutationFn: async (variables: {
+			integrationName: string;
+			notionIntegrationToken: string;
+		}) => {
+			return createUserNotionIntegration({
+				integrationName: variables.integrationName,
+				notionIntegrationToken: variables.notionIntegrationToken,
+			});
+		},
+		// ★★★ onSuccess のシグネチャをTypeScriptのエラーに合わせて3引数にする ★★★
+		onSuccess: (
+			_data: NotionIntegration,
+			_variables: { integrationName: string; notionIntegrationToken: string },
+			_context: unknown,
+			// 4番目の引数は定義しない
+		) => {
+			// ★★★ queryClient と currentUser はセットアップ関数の getAtomInSetup を使って取得 ★★★
+			const queryClient: QueryClient = getAtomInSetup(queryClientAtom);
+			const currentUser = getAtomInSetup(currentUserAtom);
+			if (currentUser?.uid) {
+				queryClient.invalidateQueries({
+					queryKey: ["userNotionIntegrations", currentUser.uid],
+				});
+			}
+		},
+	}),
+);
+
+export const deleteUserNotionIntegrationMutationAtom = atomWithMutation<
+	void, // TData
+	string, // TVariables
+	Error, // TError
+	unknown // TContext
+>(
+	// ↓ この get は atomWithMutation のセットアップ関数に渡される Jotai の Getter
+	(getAtomInSetup) => ({
+		mutationFn: async (integrationId: string) => {
+			return deleteUserNotionIntegration(integrationId);
+		},
+		// ★★★ onSuccess のシグネチャをTypeScriptのエラーに合わせて3引数にする ★★★
+		onSuccess: (
+			// biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
+			_data: void,
+			_variables: string,
+			_context: unknown,
+			// 4番目の引数は定義しない
+		) => {
+			// ★★★ queryClient と currentUser はセットアップ関数の getAtomInSetup を使って取得 ★★★
+			const queryClient: QueryClient = getAtomInSetup(queryClientAtom);
+			const currentUser = getAtomInSetup(currentUserAtom);
+			if (currentUser?.uid) {
+				queryClient.invalidateQueries({
+					queryKey: ["userNotionIntegrations", currentUser.uid],
+				});
+			}
+		},
+	}),
+);
