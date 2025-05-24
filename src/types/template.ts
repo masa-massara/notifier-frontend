@@ -7,11 +7,11 @@ export interface TemplateCondition {
 export interface Template {
   id: string;
   name: string;
-  userNotionIntegrationId: string;
+  notionIntegrationId: string;
   destinationId: string;
   notionDatabaseId: string;
   conditions: TemplateCondition[]; // Updated type
-  body: string;
+  messageBody: string;
   updatedAt?: string; // Assuming this might come from the backend for "Last Updated"
   createdAt?: string;
 

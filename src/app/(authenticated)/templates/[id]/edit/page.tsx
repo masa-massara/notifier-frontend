@@ -35,14 +35,14 @@ import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
 	name: z.string().min(1, { message: "Template name is required." }),
-	userNotionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
+	notionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
 	notionDatabaseId: z.string().min(1, { message: "Notion Database ID is required." }),
 	conditions: z.array(z.object({ // Added
 		propertyId: z.string().min(1, "Property selection is required."),
 		operator: z.string().min(1, "Operator selection is required."),
 		value: z.string().min(1, "Value is required."),
 	})).optional(),
-	body: z.string().min(1, { message: "Message body is required." }),
+	messageBody: z.string().min(1, { message: "Message body is required." }),
 	destinationId: z.string().min(1, { message: "Destination is required." }),
 });
 
@@ -68,10 +68,10 @@ function EditTemplatePage() {
 		defaultValues: {
 			// Added default values
 			name: "",
-			userNotionIntegrationId: "",
+			notionIntegrationId: "",
 			notionDatabaseId: "",
 			conditions: [], // Added
-			body: "",
+			messageBody: "",
 			destinationId: "",
 		},
 	});
@@ -106,7 +106,7 @@ function EditTemplatePage() {
 		}
 	);
 
-	const selecteduserNotionIntegrationId = watch("userNotionIntegrationId");
+	const selectedNotionIntegrationId = watch("notionIntegrationId");
 	const selectedNotionDatabaseId = watch("notionDatabaseId"); // Added
 
 	const {
@@ -114,14 +114,14 @@ function EditTemplatePage() {
 		isLoading: isLoadingNotionDatabases,
 		error: errorNotionDatabases,
 	} = useQuery<NotionDatabase[], Error>({
-		queryKey: ["notionDatabases", selecteduserNotionIntegrationId],
+		queryKey: ["notionDatabases", selectedNotionIntegrationId],
 		queryFn: () => {
-			if (!selecteduserNotionIntegrationId) {
+			if (!selectedNotionIntegrationId) {
 				return Promise.resolve([]);
 			}
-			return getNotionDatabases(selecteduserNotionIntegrationId);
+			return getNotionDatabases(selectedNotionIntegrationId);
 		},
-		enabled: !!selecteduserNotionIntegrationId,
+		enabled: !!selectedNotionIntegrationId,
 	});
 
 	const { // Added Db Properties Query
@@ -129,17 +129,17 @@ function EditTemplatePage() {
 		isLoading: isLoadingDbProperties,
 		error: errorDbProperties,
 	} = useQuery<NotionProperty[], Error>({
-		queryKey: ["databaseProperties", selecteduserNotionIntegrationId, selectedNotionDatabaseId],
-		queryFn: () => getNotionDatabaseProperties(selecteduserNotionIntegrationId as string, selectedNotionDatabaseId as string),
-		enabled: !!selecteduserNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Ensure template is loaded
+		queryKey: ["databaseProperties", selectedNotionIntegrationId, selectedNotionDatabaseId],
+		queryFn: () => getNotionDatabaseProperties(selectedNotionIntegrationId as string, selectedNotionDatabaseId as string),
+		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Ensure template is loaded
 	});
 
 	useEffect(() => {
-		if (template && selecteduserNotionIntegrationId && selecteduserNotionIntegrationId !== template.userNotionIntegrationId) {
+		if (template && selectedNotionIntegrationId && selectedNotionIntegrationId !== template.notionIntegrationId) {
 			setValue("notionDatabaseId", "", { shouldValidate: true });
 			setValue("conditions", [], { shouldValidate: false }); // Added: Clear conditions
 		}
-	}, [selecteduserNotionIntegrationId, setValue, template]);
+	}, [selectedNotionIntegrationId, setValue, template]);
 
 	useEffect(() => { // Added: Clear conditions if database changes from original template
 		if (template && selectedNotionDatabaseId && selectedNotionDatabaseId !== template.notionDatabaseId) {
@@ -151,10 +151,10 @@ function EditTemplatePage() {
 		if (template) {
 			reset({
 				name: template.name,
-				userNotionIntegrationId: template.userNotionIntegrationId,
+				notionIntegrationId: template.notionIntegrationId,
 				notionDatabaseId: template.notionDatabaseId,
 				conditions: template.conditions || [], // Updated: handle conditions
-				body: template.body,
+				messageBody: template.messageBody,
 				destinationId: template.destinationId,
 			});
 			// `replace` from useFieldArray can also be used here if `reset` doesn't work as expected for field arrays
@@ -244,9 +244,9 @@ function EditTemplatePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="userNotionIntegrationId">Use Notion Integration</Label>
+							<Label htmlFor="notionIntegrationId">Use Notion Integration</Label>
 							<Controller
-								name="userNotionIntegrationId"
+								name="notionIntegrationId"
 								control={control}
 								render={({ field }) => (
 									<Select
@@ -276,9 +276,9 @@ function EditTemplatePage() {
 									</Select>
 								)}
 							/>
-							{errors.userNotionIntegrationId && (
+							{errors.notionIntegrationId && (
 								<p className="text-red-600 text-sm">
-									{errors.userNotionIntegrationId.message}
+									{errors.notionIntegrationId.message}
 								</p>
 							)}
 						</div>
@@ -295,7 +295,7 @@ function EditTemplatePage() {
 										}}
 										value={field.value} // Ensures the value is controlled by RHF
 										disabled={
-											!selecteduserNotionIntegrationId ||
+											!selectedNotionIntegrationId ||
 											isLoadingNotionDatabases ||
 											mutation.isPending ||
 											isLoadingTemplate // Disable if template still loading integration ID
@@ -304,7 +304,7 @@ function EditTemplatePage() {
 										<SelectTrigger>
 											<SelectValue
 												placeholder={
-													!selecteduserNotionIntegrationId
+													!selectedNotionIntegrationId
 														? "Select a Notion Integration first"
 														: "Select a Notion Database"
 												}
@@ -321,7 +321,7 @@ function EditTemplatePage() {
 												</SelectItem>
 											) : !isLoadingNotionDatabases &&
 											  notionDatabases &&
-											  notionDatabases.length === 0 && selecteduserNotionIntegrationId ? (
+											  notionDatabases.length === 0 && selectedNotionIntegrationId ? (
 												<SelectItem value="no_db" disabled>
 													No databases found for this integration.
 												</SelectItem>
@@ -332,7 +332,7 @@ function EditTemplatePage() {
 													</SelectItem>
 												))
 											)}
-											{!selecteduserNotionIntegrationId && !isLoadingNotionDatabases && (
+											{!selectedNotionIntegrationId && !isLoadingNotionDatabases && (
 												<SelectItem value="select_integration_first" disabled>
 													Select a Notion Integration first
 												</SelectItem>
@@ -384,7 +384,7 @@ function EditTemplatePage() {
 						{fields.map((field, index) => (
 							<div key={field.id} className="flex items-start space-x-2 p-2 border rounded-md">
 								<div className="flex-1 space-y-2">
-									<div className="gap-2 grid grid-cols-1 md:grid-cols-3">
+									<div className="grid grid-cols-1 md:grid-cols-3 gap-2">
 										{/* Property Select */}
 										<div className="space-y-1">
 											<Label htmlFor={`conditions.${index}.propertyId`}>Property</Label>
@@ -474,7 +474,7 @@ function EditTemplatePage() {
 									disabled={mutation.isPending || isLoadingTemplate}
 									className="mt-6" // Adjust margin to align with form fields
 								>
-									<Trash2 className="w-4 h-4" />
+									<Trash2 className="h-4 w-4" />
 								</Button>
 							</div>
 						))}
@@ -505,10 +505,10 @@ function EditTemplatePage() {
 						<CardTitle>3. Notification Message</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-2">
-						<Label htmlFor="body">Message Body</Label>
-						<Textarea id="body" rows={5} {...register("body")} />
-						{errors.body && (
-							<p className="text-red-600 text-sm">{errors.body.message}</p>
+						<Label htmlFor="messageBody">Message Body</Label>
+						<Textarea id="messageBody" rows={5} {...register("messageBody")} />
+						{errors.messageBody && (
+							<p className="text-red-600 text-sm">{errors.messageBody.message}</p>
 						)}
 						<p className="text-muted-foreground text-xs">
 							Placeholders like {"{PropertyName}"} (e.g. {"{Task Name}"}) and{" "}

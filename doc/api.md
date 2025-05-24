@@ -53,7 +53,7 @@
     {
       "name": "string (必須, テンプレートの管理名)",
       "notionDatabaseId": "string (必須, 通知のトリガーとなる Notion データベースの ID)",
-      "useruserNotionIntegrationId": "string (必須, このテンプレートが使用する User Notion Integration の ID)",
+      "userNotionIntegrationId": "string (必須, このテンプレートが使用する User Notion Integration の ID)",
       "body": "string (必須, 通知メッセージの本文。プレースホルダ使用可)",
       "conditions": [
         {
@@ -73,7 +73,7 @@
           "id": "string (自動生成されたテンプレート ID)",
           "name": "string",
           "notionDatabaseId": "string",
-          "useruserNotionIntegrationId": "string | null (テンプレートが使用する User Notion Integration の ID)",
+          "userNotionIntegrationId": "string | null (テンプレートが使用する User Notion Integration の ID)",
           "body": "string",
           "conditions": [ /* ... */ ],
           "destinationId": "string",
@@ -154,7 +154,7 @@
     {
       "name": "string (オプション)",
       "notionDatabaseId": "string (オプション)",
-      "useruserNotionIntegrationId": "string | null (オプション, このテンプレートが使用する User Notion Integration の ID。null を指定すると連携解除)",
+      "userNotionIntegrationId": "string | null (オプション, このテンプレートが使用する User Notion Integration の ID。null を指定すると連携解除)",
       "body": "string (オプション)",
       "conditions": [ /* ... */ ],
       "destinationId": "string (オプション)"
@@ -170,7 +170,7 @@
     curl -X PUT http://localhost:3000/api/v1/templates/your_template_id_here \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer YOUR_ID_TOKEN_HERE" \
-     -d '{"name": "更新後のテンプレート名", "body": "更新されたメッセージ本文！", "useruserNotionIntegrationId": "new_integration_id"}'
+     -d '{"name": "更新後のテンプレート名", "body": "更新されたメッセージ本文！", "userNotionIntegrationId": "new_integration_id"}'
     ```
 
 ### 1.5. テンプレートの削除
