@@ -1,9 +1,10 @@
 // Import the functions you need from the SDKs you need
-import { getApp, getApps, initializeApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import firebaseConfigFromFile from "../../firebase-config.json";
 
-// TODO: Add your Firebase project configuration here
+// JSONファイルから設定を読み込む
+import firebaseConfigFromFile from "../../firebase-config.json"; // パスは実際のファイル位置に合わせて調整してな
+
 const firebaseConfig = {
 	apiKey: firebaseConfigFromFile.apiKey,
 	authDomain: firebaseConfigFromFile.authDomain,
@@ -14,6 +15,7 @@ const firebaseConfig = {
 	measurementId: firebaseConfigFromFile.measurementId,
 };
 
+// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 

@@ -1,17 +1,17 @@
-import { auth } from "@/lib/firebase"; // Assuming auth is exported from firebase.ts
-import { currentUserAtom, idTokenAtom } from "@/store/globalAtoms";
-import { store } from "@/store/store"; // Assuming your Jotai store instance is exported as 'store'
 import {
-	EmailAuthProvider,
-	type User, // Import User type
 	createUserWithEmailAndPassword,
-	onAuthStateChanged,
-	reauthenticateWithCredential,
-	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
 	signOut,
+	sendPasswordResetEmail,
+	onAuthStateChanged,
+	EmailAuthProvider,
+	reauthenticateWithCredential,
 	updatePassword,
+	type User, // Import User type
 } from "firebase/auth";
+import { auth } from "@/lib/firebase"; // Assuming auth is exported from firebase.ts
+import { currentUserAtom, idTokenAtom } from "../store/globalAtoms";
+import { store } from "@/store/store"; // Assuming your Jotai store instance is exported as 'store'
 
 /**
  * Signs up a new user with email and password.
