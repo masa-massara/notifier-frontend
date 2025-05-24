@@ -41,14 +41,14 @@ import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
 	name: z.string().min(1, { message: "Template name is required." }),
-	notionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
+	userNotionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
 	notionDatabaseId: z.string().min(1, { message: "Notion Database ID is required." }),
 	conditions: z.array(z.object({ // Added
 		propertyId: z.string().min(1, "Property selection is required."),
 		operator: z.string().min(1, "Operator selection is required."),
 		value: z.string().min(1, "Value is required."), 
 	})).optional(),
-	messageBody: z.string().min(1, { message: "Message body is required." }),
+	body: z.string().min(1, { message: "Message body is required." }),
 	destinationId: z.string().min(1, { message: "Destination is required." }),
 });
 
@@ -70,10 +70,10 @@ function NewTemplatePage() {
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
-			notionIntegrationId: "",
+			userNotionIntegrationId: "",
 			notionDatabaseId: "",
 			conditions: [], // Updated
-			messageBody: "",
+			body: "",
 			destinationId: "",
 		},
 	});
@@ -98,7 +98,7 @@ function NewTemplatePage() {
 		}
 	);
 
-	const selectedNotionIntegrationId = watch("notionIntegrationId");
+	const selectedNotionIntegrationId = watch("userNotionIntegrationId");
 	const selectedNotionDatabaseId = watch("notionDatabaseId"); // Added
 
 	const {
@@ -190,9 +190,9 @@ function NewTemplatePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="notionIntegrationId">Use Notion Integration</Label>
+							<Label htmlFor="userNotionIntegrationId">Use Notion Integration</Label>
 							<Controller
-								name="notionIntegrationId"
+								name="userNotionIntegrationId"
 								control={control}
 								render={({ field }) => (
 									<Select
@@ -222,9 +222,9 @@ function NewTemplatePage() {
 									</Select>
 								)}
 							/>
-							{errors.notionIntegrationId && (
+							{errors.userNotionIntegrationId && (
 								<p className="text-red-600 text-sm">
-									{errors.notionIntegrationId.message}
+									{errors.userNotionIntegrationId.message}
 								</p>
 							)}
 						</div>
@@ -322,7 +322,7 @@ function NewTemplatePage() {
 						{fields.map((field, index) => (
 							<div key={field.id} className="flex items-start space-x-2 p-2 border rounded-md">
 								<div className="flex-1 space-y-2">
-									<div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+									<div className="gap-2 grid grid-cols-1 md:grid-cols-3">
 										{/* Property Select */}
 										<div className="space-y-1">
 											<Label htmlFor={`conditions.${index}.propertyId`}>Property</Label>
@@ -412,7 +412,7 @@ function NewTemplatePage() {
 									disabled={mutation.isPending}
 									className="mt-6" // Adjust margin to align with form fields
 								>
-									<Trash2 className="h-4 w-4" />
+									<Trash2 className="w-4 h-4" />
 								</Button>
 							</div>
 						))}
@@ -443,15 +443,15 @@ function NewTemplatePage() {
 						<CardTitle>3. Notification Message</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-2">
-						<Label htmlFor="messageBody">Message Body</Label>
+						<Label htmlFor="body">Message Body</Label>
 						<Textarea
-							id="messageBody"
+							id="body"
 							placeholder="Type your notification message here..."
 							rows={5}
-							{...register("messageBody")}
+							{...register("body")}
 						/>
-						{errors.messageBody && (
-							<p className="text-red-600 text-sm">{errors.messageBody.message}</p>
+						{errors.body && (
+							<p className="text-red-600 text-sm">{errors.body.message}</p>
 						)}
 						<p className="text-muted-foreground text-xs">
 							Placeholders like {"{PropertyName}"} (e.g. {"{Task Name}"}) and{" "}
