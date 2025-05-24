@@ -1,11 +1,13 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form"; // Added useFieldArray
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { Trash2 } from "lucide-react"; // Added
 // AppLayout is now applied by the group's layout.tsx
 import PageHeader from "@/components/layout/PageHeader";
 // import withAuth from "@/components/auth/withAuth"; // HOC Removed
@@ -32,14 +34,20 @@ import { useToast } from "@/hooks/use-toast";
 import { createTemplate } from "@/services/templateService";
 import { getUserNotionIntegrations } from "@/services/userNotionIntegrationService";
 import { getDestinations } from "@/services/destinationService";
+import { getNotionDatabases, getNotionDatabaseProperties } from "@/services/notionService"; // Added getNotionDatabaseProperties
 import type { CreateTemplateData } from "@/types/template";
-import type { NotionIntegration } from "@/types/notionIntegration";
+import type { NotionIntegration, NotionDatabase, NotionProperty } from "@/types/notionIntegration"; // Added NotionProperty
 import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
 	name: z.string().min(1, { message: "Template name is required." }),
 	notionIntegrationId: z.string().min(1, { message: "Notion integration is required." }),
 	notionDatabaseId: z.string().min(1, { message: "Notion Database ID is required." }),
+	conditions: z.array(z.object({ // Added
+		propertyId: z.string().min(1, "Property selection is required."),
+		operator: z.string().min(1, "Operator selection is required."),
+		value: z.string().min(1, "Value is required."), 
+	})).optional(),
 	messageBody: z.string().min(1, { message: "Message body is required." }),
 	destinationId: z.string().min(1, { message: "Destination is required." }),
 });
@@ -56,16 +64,24 @@ function NewTemplatePage() {
 		register,
 		handleSubmit,
 		formState: { errors, isSubmitting },
+		watch, // Added
+		setValue, // Added
 	} = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
 			notionIntegrationId: "",
 			notionDatabaseId: "",
+			conditions: [], // Updated
 			messageBody: "",
 			destinationId: "",
 		},
 	});
+
+	const { fields, append, remove } = useFieldArray({ // Added
+    control,
+    name: "conditions",
+  });
 
 	const { data: notionIntegrations, isLoading: isLoadingNotion } = useQuery<
 		NotionIntegration[],
@@ -82,11 +98,52 @@ function NewTemplatePage() {
 		}
 	);
 
+	const selectedNotionIntegrationId = watch("notionIntegrationId");
+	const selectedNotionDatabaseId = watch("notionDatabaseId"); // Added
+
+	const {
+		data: notionDatabases,
+		isLoading: isLoadingNotionDatabases,
+		error: errorNotionDatabases,
+	} = useQuery<NotionDatabase[], Error>({
+		queryKey: ["notionDatabases", selectedNotionIntegrationId],
+		queryFn: () => {
+			if (!selectedNotionIntegrationId) {
+				return Promise.resolve([]); // Or handle as appropriate
+			}
+			return getNotionDatabases(selectedNotionIntegrationId);
+		},
+		enabled: !!selectedNotionIntegrationId,
+	});
+
+	const { // Added Db Properties Query
+		data: databaseProperties,
+		isLoading: isLoadingDbProperties,
+		error: errorDbProperties,
+	} = useQuery<NotionProperty[], Error>({
+		queryKey: ["databaseProperties",selectedNotionIntegrationId, selectedNotionDatabaseId],
+		queryFn: () => getNotionDatabaseProperties(selectedNotionIntegrationId as string, selectedNotionDatabaseId as string),
+		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId,
+	});
+
+	useEffect(() => {
+		if (selectedNotionIntegrationId) {
+			setValue("notionDatabaseId", "", { shouldValidate: true });
+			setValue("conditions", [], { shouldValidate: false }); // Added
+		}
+	}, [selectedNotionIntegrationId, setValue]);
+
+	useEffect(() => { // Added
+		if (selectedNotionDatabaseId) {
+			setValue("conditions", [], { shouldValidate: false });
+		}
+	}, [selectedNotionDatabaseId, setValue]);
+
 	const mutation = useMutation({
 		mutationFn: (formData: FormData) => {
 			const templateData: CreateTemplateData = {
 				...formData,
-				conditions: {},
+				conditions: formData.conditions || [], // Updated
 			};
 			return createTemplate(templateData);
 		},
@@ -173,20 +230,70 @@ function NewTemplatePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="notionDatabaseId">Target Notion Database ID</Label>
-							<Input
-								id="notionDatabaseId"
-								placeholder="Enter the ID of the Notion Database"
-								{...register("notionDatabaseId")}
+							<Label htmlFor="notionDatabaseId">Target Notion Database</Label>
+							<Controller
+								name="notionDatabaseId"
+								control={control}
+								render={({ field }) => (
+									<Select
+										onValueChange={field.onChange}
+										value={field.value}
+										disabled={
+											!selectedNotionIntegrationId ||
+											isLoadingNotionDatabases ||
+											mutation.isPending
+										}
+									>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={
+													!selectedNotionIntegrationId
+														? "Select a Notion Integration first"
+														: "Select a Notion Database"
+												}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{isLoadingNotionDatabases ? (
+												<SelectItem value="loading" disabled>
+													Loading databases...
+												</SelectItem>
+											) : errorNotionDatabases ? (
+												<SelectItem value="error" disabled>
+													Error fetching databases
+												</SelectItem>
+											) : !isLoadingNotionDatabases &&
+											  notionDatabases &&
+											  notionDatabases.length === 0 ? (
+												<SelectItem value="no-databases" disabled>
+													No databases found for this integration.
+												</SelectItem>
+											) : (
+												notionDatabases?.map((database) => (
+													<SelectItem key={database.id} value={database.id}>
+														{database.name}
+													</SelectItem>
+												))
+											)}
+										</SelectContent>
+									</Select>
+								)}
 							/>
 							{errors.notionDatabaseId && (
 								<p className="text-red-600 text-sm">
 									{errors.notionDatabaseId.message}
 								</p>
 							)}
-							<p className="text-muted-foreground text-xs">
-								This is the ID of the database you want to monitor for changes.
-							</p>
+							{!errorNotionDatabases && (
+								<p className="text-muted-foreground text-xs">
+									Select the Notion database you want to monitor for changes.
+								</p>
+							)}
+							{errorNotionDatabases && (
+								<p className="text-red-600 text-xs">
+									Failed to load databases: {errorNotionDatabases.message}
+								</p>
+							)}
 						</div>
 					</CardContent>
 				</Card>
@@ -194,13 +301,140 @@ function NewTemplatePage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>2. Notification Conditions</CardTitle>
+						<CardDescription>
+							Define conditions based on Notion database properties to trigger notifications.
+						</CardDescription>
 					</CardHeader>
-					<CardContent>
-						<Textarea
-							value="Notification conditions configuration will be available here in a future update. For now, notifications will be sent for all new entries in the database."
-							disabled
-							rows={3}
-						/>
+					<CardContent className="space-y-4">
+						{isLoadingDbProperties && <p>Loading properties...</p>}
+						{errorDbProperties && (
+							<p className="text-red-500">
+								Error loading database properties: {errorDbProperties.message}
+							</p>
+						)}
+						{!isLoadingDbProperties &&
+							!errorDbProperties &&
+							selectedNotionDatabaseId &&
+							(!databaseProperties || databaseProperties.length === 0) && (
+								<p>No properties found for this database.</p>
+							)}
+
+						{fields.map((field, index) => (
+							<div key={field.id} className="flex items-start space-x-2 p-2 border rounded-md">
+								<div className="flex-1 space-y-2">
+									<div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+										{/* Property Select */}
+										<div className="space-y-1">
+											<Label htmlFor={`conditions.${index}.propertyId`}>Property</Label>
+											<Controller
+												name={`conditions.${index}.propertyId`}
+												control={control}
+												render={({ field: controllerField }) => (
+													<Select
+														onValueChange={controllerField.onChange}
+														value={controllerField.value}
+														disabled={!databaseProperties || isLoadingDbProperties || mutation.isPending}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="Select property" />
+														</SelectTrigger>
+														<SelectContent>
+															{databaseProperties?.map((prop) => (
+																<SelectItem key={prop.id} value={prop.id}>
+																	{prop.name} ({prop.type})
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												)}
+											/>
+											{errors.conditions?.[index]?.propertyId && (
+												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.propertyId?.message}</p>
+											)}
+										</div>
+
+										{/* Operator Select */}
+										<div className="space-y-1">
+											<Label htmlFor={`conditions.${index}.operator`}>Operator</Label>
+											<Controller
+												name={`conditions.${index}.operator`}
+												control={control}
+												render={({ field: controllerField }) => (
+													<Select
+														onValueChange={controllerField.onChange}
+														value={controllerField.value}
+														disabled={mutation.isPending}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="Select operator" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="equals">Equals</SelectItem>
+															<SelectItem value="not_equals">Not Equals</SelectItem>
+															<SelectItem value="contains">Contains</SelectItem>
+															<SelectItem value="not_contains">Does Not Contain</SelectItem>
+															{/* Add more operators as needed */}
+														</SelectContent>
+													</Select>
+												)}
+											/>
+											{errors.conditions?.[index]?.operator && (
+												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.operator?.message}</p>
+											)}
+										</div>
+
+										{/* Value Input */}
+										<div className="space-y-1">
+											<Label htmlFor={`conditions.${index}.value`}>Value</Label>
+											<Controller
+												name={`conditions.${index}.value`}
+												control={control}
+												render={({ field: controllerField }) => (
+													<Input
+														{...controllerField}
+														placeholder="Enter value"
+														disabled={mutation.isPending}
+													/>
+												)}
+											/>
+											{errors.conditions?.[index]?.value && (
+												<p className="text-red-600 text-xs">{errors.conditions?.[index]?.value?.message}</p>
+											)}
+										</div>
+									</div>
+								</div>
+								{/* Remove Button */}
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									onClick={() => remove(index)}
+									disabled={mutation.isPending}
+									className="mt-6" // Adjust margin to align with form fields
+								>
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</div>
+						))}
+						<Button
+							type="button"
+							onClick={() => append({ propertyId: "", operator: "", value: "" })}
+							disabled={
+								!selectedNotionDatabaseId ||
+								isLoadingDbProperties ||
+								!!errorDbProperties ||
+								(!databaseProperties || databaseProperties.length === 0) ||
+								mutation.isPending
+							}
+						>
+							Add Condition
+						</Button>
+						{errors.conditions?.root && (
+								<p className="text-red-600 text-sm">{errors.conditions.root.message}</p>
+						)}
+						{ Array.isArray(errors.conditions) && errors.conditions.length === 0 && errors.conditions?.message && (
+							 <p className="text-red-600 text-sm">{errors.conditions.message}</p>
+						)}
 					</CardContent>
 				</Card>
 
