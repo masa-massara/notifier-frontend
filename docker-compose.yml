@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  frontend-dev: # .devcontainer/devcontainer.json の service名と合わせる
+    build:
+      context: . # このdocker-compose.ymlがあるディレクトリがビルドコンテキスト
+      dockerfile: Dockerfile # 同じディレクトリにあるDockerfileを使用
+    container_name: notifier-frontend-dev-app
+    ports:
+      - "3001:3001" # ホストの3001番をコンテナの3001番にマッピング (Next.js開発サーバー用)
+    volumes:
+      - .:/usr/src/app # ソースコードをマウントしてホットリロードを有効に
+      # node_modulesはコンテナ内に保持 (ホストのnode_modulesとの競合を避ける)
+      # 名前付きボリュームを使うと、コンテナ再作成時も依存関係が残る
+      - node_modules_frontend_dev:/usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3001 # Next.js開発サーバーがリッスンするポート
+      # バックエンドAPIのURL (バックエンドがホストの3000で動いてる場合)
+      # Docker for Mac/Windows の場合、ホストへは 'host.docker.internal' でアクセスできることが多い
+      - NEXT_PUBLIC_API_BASE_URL=http://host.docker.internal:3000/api/v1
+      # ホットリロードのためのポーリング設定 (環境によって必要)
+      - WATCHPACK_POLLING=true
+    tty: true        # ターミナル操作を可能にする
+    stdin_open: true # 標準入力を開いたままにする
+    # command: sleep infinity # .devcontainer/docker-compose.yml で上書きされる想定
+
+volumes:
+  node_modules_frontend_dev: # 開発用のnode_modulesを永続化するための名前付きボリューム

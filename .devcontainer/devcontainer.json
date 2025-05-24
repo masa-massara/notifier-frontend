@@ -1,0 +1,39 @@
+{
+	"name": "Notifier Frontend (Bun + Next.js)",
+	// docker-compose.yml を使ってコンテナを定義・起動する
+	"dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"], // プロジェクトルートのymlと、このフォルダのymlをマージ
+	"service": "frontend-dev", // docker-compose.yml で定義するサービス名
+	"workspaceFolder": "/usr/src/app", // コンテナ内の作業ディレクトリ
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bunsenapp.bun-vscode", // Bun用拡張機能
+				"biomejs.biome", // Biome (リンター/フォーマッター)
+				"bradlc.vscode-tailwindcss", // もしTailwind CSSを使うなら
+				"esbenp.prettier-vscode", // もしPrettierも併用するなら
+				"dbaeumer.vscode-eslint" // もしESLintも併用するなら
+			],
+			"settings": {
+				"editor.formatOnSave": true,
+				"biome.lspBin": "/usr/src/app/node_modules/.bin/biome",
+				"[typescript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[typescriptreact]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[javascript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[javascriptreact]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				}
+			}
+		}
+	},
+	// コンテナ作成後に実行するコマンド
+	// "postCreateCommand": "bun install", // 依存関係のインストール (docker-compose側でも可)
+	// コンテナ内のユーザー (oven/bunイメージのデフォルトは 'node' か 'bun' か確認)
+	// "remoteUser": "node"
+	"shutdownAction": "stopCompose" // VSCodeを閉じたらコンテナも止める
+}

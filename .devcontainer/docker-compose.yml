@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  frontend-dev: # devcontainer.json の service名と合わせる
+    # 開発時はコンテナを起動したままにして、中で手動でコマンド実行するため
+    # プロジェクトルートのdocker-compose.ymlのcommandを上書き
+    command: sleep infinity
+    # (オプション) もしバックエンドのコンテナと通信させたいなら、ネットワーク設定
+    # networks:
+    #  - notifier_default # バックエンドのdocker-compose.ymlで定義されたネットワーク名
+# networks:
+#   notifier_default:
+#     external: true
