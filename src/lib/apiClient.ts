@@ -1,17 +1,22 @@
 import { store } from "@/store/store"; // Assuming you have a Jotai store instance exported from here
 import { idTokenAtom } from "@/store/globalAtoms";
 
-const BASE_URL = "https://notifier-app-953644780816.asia-northeast1.run.app/api/v1"; // Placeholder base URL
+// Define a fallback URL
+const FALLBACK_API_BASE_URL = "https://notifier-app-953644780816.asia-northeast1.run.app/api/v1";
 
-interface FetchOptions extends RequestInit {
+// Use environment variable for BASE_URL, with a fallback
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || FALLBACK_API_BASE_URL;
+
+export interface FetchOptions extends RequestInit { // Export FetchOptions
   // You can add custom options here if needed
 }
 
 export const fetchApiClient = async (
   url: string,
+  idToken: string | null, // Added idToken argument
   options: FetchOptions = {}
 ): Promise<Response> => {
-  const idToken = store.get(idTokenAtom); // Retrieve ID token from Jotai store
+  // Removed: const idToken = store.get(idTokenAtom);
 
   const headers = new Headers(options.headers);
 

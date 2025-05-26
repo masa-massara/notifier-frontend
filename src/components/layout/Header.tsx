@@ -5,31 +5,27 @@ import { useAtomValue } from "jotai";
 import { currentUserAtom } from "@/store/globalAtoms";
 import { Button } from "@/components/ui/button"; // Assuming Button component is available
 
-// Placeholder for App Icon (replace with actual SVG or icon component)
-const AppIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="h-6 w-6"
-  >
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-  </svg>
-);
+interface HeaderProps {
+  appName: string;
+  appIcon: React.ReactNode;
+  loginButtonText: string;
+  signupButtonText: string;
+  defaultUserName: string;
+}
 
-export default function Header() {
+export default function Header(props: HeaderProps) {
   const currentUser = useAtomValue(currentUserAtom);
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
       <Link href="/" className="flex items-center space-x-2">
-        <AppIcon />
-        <span className="font-semibold">Notifier App</span>
+        {props.appIcon}
+        <span className="font-semibold">{props.appName}</span>
       </Link>
       <div className="flex items-center space-x-2">
         {currentUser ? (
           <>
-            <span>{currentUser.email || "User Name"}</span>
+            <span>{currentUser.email || props.defaultUserName}</span>
             <Link href="/account/settings">
               <Button variant="outline" size="icon">
                 ⚙️ {/* Gear Icon */}
@@ -39,10 +35,10 @@ export default function Header() {
         ) : (
           <>
             <Link href="/login">
-              <Button variant="outline">Login</Button>
+              <Button variant="outline">{props.loginButtonText}</Button>
             </Link>
             <Link href="/signup">
-              <Button>New Registration</Button>
+              <Button>{props.signupButtonText}</Button>
             </Link>
           </>
         )}

@@ -7,6 +7,7 @@ import {
   getDestinations,
   deleteDestination,
 } from "@/services/destinationService";
+import { useApiClient } from '@/hooks/useApiClient'; // Added import
 // AppLayout is now applied by the group's layout.tsx
 import PageHeader from "@/components/layout/PageHeader";
 // import withAuth from "@/components/auth/withAuth"; // HOC Removed
@@ -51,6 +52,7 @@ const maskUrl = (url: string) => {
 function DestinationsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const api = useApiClient(); // Instantiate useApiClient
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [selectedDestinationId, setSelectedDestinationId] = React.useState<
     string | null
@@ -62,11 +64,12 @@ function DestinationsPage() {
     error,
   } = useQuery<Destination[], Error>({
     queryKey: ["destinations"],
-    queryFn: getDestinations,
+    queryFn: () => getDestinations(api), // Updated queryFn
+    enabled: !!api, // Added enabled flag
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteDestination,
+    mutationFn: (id: string) => deleteDestination(api, id), // Updated mutationFn
     onSuccess: () => {
       toast({
         title: "Success",

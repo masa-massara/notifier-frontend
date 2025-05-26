@@ -35,6 +35,7 @@ import { createTemplate } from "@/services/templateService";
 import { getUserNotionIntegrations } from "@/services/userNotionIntegrationService";
 import { getDestinations } from "@/services/destinationService";
 import { getNotionDatabases, getNotionDatabaseProperties } from "@/services/notionService"; // Added getNotionDatabaseProperties
+import { useApiClient } from '@/hooks/useApiClient'; // Added import
 import type { CreateTemplateData } from "@/types/template";
 import type { NotionIntegration, NotionDatabase, NotionProperty } from "@/types/notionIntegration"; // Added NotionProperty
 import type { Destination } from "@/types/destination";
@@ -58,6 +59,7 @@ function NewTemplatePage() {
 	const router = useRouter();
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
+	const api = useApiClient(); // Instantiate useApiClient
 
 	const {
 		control,
@@ -111,9 +113,9 @@ function NewTemplatePage() {
 			if (!selectedNotionIntegrationId) {
 				return Promise.resolve([]); // Or handle as appropriate
 			}
-			return getNotionDatabases(selectedNotionIntegrationId);
+			return getNotionDatabases(api, selectedNotionIntegrationId); // Pass api
 		},
-		enabled: !!selectedNotionIntegrationId,
+		enabled: !!api && !!selectedNotionIntegrationId, // Updated enabled
 	});
 
 	const { // Added Db Properties Query
@@ -122,8 +124,8 @@ function NewTemplatePage() {
 		error: errorDbProperties,
 	} = useQuery<NotionProperty[], Error>({
 		queryKey: ["databaseProperties",selectedNotionIntegrationId, selectedNotionDatabaseId],
-		queryFn: () => getNotionDatabaseProperties(selectedNotionIntegrationId as string, selectedNotionDatabaseId as string),
-		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId,
+		queryFn: () => getNotionDatabaseProperties(api, selectedNotionIntegrationId as string, selectedNotionDatabaseId as string), // Pass api
+		enabled: !!api && !!selectedNotionIntegrationId && !!selectedNotionDatabaseId, // Updated enabled
 	});
 
 	useEffect(() => {

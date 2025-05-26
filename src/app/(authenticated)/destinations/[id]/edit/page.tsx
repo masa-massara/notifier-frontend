@@ -25,6 +25,7 @@ import {
   getDestination,
   updateDestination,
 } from "@/services/destinationService";
+import { useApiClient } from '@/hooks/useApiClient'; // Added import
 import type { Destination } from "@/types/destination";
 
 const formSchema = z.object({
@@ -40,9 +41,10 @@ type FormData = z.infer<typeof formSchema>;
 function EditDestinationPage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string; 
+  const id = params.id as string;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const api = useApiClient(); // Instantiate useApiClient
 
   const {
     data: destination,
@@ -50,8 +52,8 @@ function EditDestinationPage() {
     error: fetchError,
   } = useQuery<Destination, Error>({
     queryKey: ["destination", id],
-    queryFn: () => getDestination(id),
-    enabled: !!id, 
+    queryFn: () => getDestination(api, id as string), // Updated queryFn
+    enabled: !!api && !!id, // Updated enabled flag
   });
 
   const {
@@ -77,7 +79,7 @@ function EditDestinationPage() {
   }, [destination, reset]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => updateDestination(id, data),
+    mutationFn: (formData: FormData) => updateDestination(api, id as string, formData), // Updated mutationFn
     onSuccess: () => {
       toast({
         title: "Success",

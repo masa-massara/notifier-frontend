@@ -29,6 +29,7 @@ import { getTemplate, updateTemplate } from "@/services/templateService";
 import { getUserNotionIntegrations } from "@/services/userNotionIntegrationService";
 import { getDestinations } from "@/services/destinationService";
 import { getNotionDatabases, getNotionDatabaseProperties } from "@/services/notionService"; // Added getNotionDatabaseProperties
+import { useApiClient } from '@/hooks/useApiClient'; // Added import
 import type { Template, UpdateTemplateData } from "@/types/template";
 import type { NotionIntegration, NotionDatabase, NotionProperty } from "@/types/notionIntegration"; // Added NotionProperty
 import type { Destination } from "@/types/destination";
@@ -59,6 +60,7 @@ function EditTemplatePage() {
 	const id = params.id as string;
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
+	const api = useApiClient(); // Instantiate useApiClient
 
 	const {
 		control,
@@ -125,9 +127,9 @@ function EditTemplatePage() {
 			if (!selectedNotionIntegrationId) {
 				return Promise.resolve([]);
 			}
-			return getNotionDatabases(selectedNotionIntegrationId);
+			return getNotionDatabases(api, selectedNotionIntegrationId); // Pass api
 		},
-		enabled: !!selectedNotionIntegrationId,
+		enabled: !!api && !!selectedNotionIntegrationId, // Updated enabled
 	});
 
 	const {
@@ -139,10 +141,11 @@ function EditTemplatePage() {
 		queryKey: ["databaseProperties", selectedNotionIntegrationId, selectedNotionDatabaseId],
 		queryFn: () =>
 			getNotionDatabaseProperties(
+				api, // Pass api
 				selectedNotionIntegrationId as string,
 				selectedNotionDatabaseId as string
 			),
-		enabled: !!selectedNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Ensure template is loaded
+		enabled: !!api && !!selectedNotionIntegrationId && !!selectedNotionDatabaseId && !isLoadingTemplate, // Updated enabled
 	});
 
 	useEffect(() => {

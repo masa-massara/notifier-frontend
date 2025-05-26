@@ -28,8 +28,8 @@ export const signUpWithEmailPassword = async (
 		);
 		const user = userCredential.user;
 		const idToken = await user.getIdToken();
-		store.set(currentUserAtom, user);
-		store.set(idTokenAtom, idToken);
+		// store.set(currentUserAtom, user); // Removed
+		// store.set(idTokenAtom, idToken); // Removed
 		return { user, idToken };
 	} catch (error) {
 		console.error("Error signing up:", error);
@@ -52,8 +52,8 @@ export const signInWithEmailPassword = async (
 		);
 		const user = userCredential.user;
 		const idToken = await user.getIdToken();
-		store.set(currentUserAtom, user);
-		store.set(idTokenAtom, idToken);
+		// store.set(currentUserAtom, user); // Removed
+		// store.set(idTokenAtom, idToken); // Removed
 		return { user, idToken };
 	} catch (error) {
 		console.error("Error signing in:", error);
@@ -67,8 +67,8 @@ export const signInWithEmailPassword = async (
 export const signOutUser = async () => {
 	try {
 		await signOut(auth);
-		store.set(currentUserAtom, null);
-		store.set(idTokenAtom, null);
+		// store.set(currentUserAtom, null); // Removed
+		// store.set(idTokenAtom, null); // Removed
 	} catch (error) {
 		console.error("Error signing out:", error);
 		throw error;

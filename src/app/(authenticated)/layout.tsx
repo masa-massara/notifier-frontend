@@ -1,46 +1,21 @@
 'use client'; // This layout will need to check auth state, so it's a client component
 
-import { useEffect, useState } from 'react';
-import { useAtomValue } from 'jotai';
-import { useRouter } from 'next/navigation';
-import { currentUserAtom } from '@/store/globalAtoms'; 
 import AppLayout from '@/components/layout/AppLayout'; 
 import LoadingSpinner from '@/components/ui/LoadingSpinner'; 
+import { useAuthGuard } from '@/hooks/useAuthGuard'; // Adjusted path
 
 export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const currentUser = useAtomValue(currentUserAtom);
-  const router = useRouter();
-  const [isInitialAuthCheckComplete, setIsInitialAuthCheckComplete] = useState(false);
+  const { authCheckComplete, isAuthenticated } = useAuthGuard();
 
-  useEffect(() => {
-    // onAuthStateChanged in Providers.tsx updates currentUserAtom.
-    // currentUser === undefined: initial state, onAuthStateChanged has not run yet.
-    // currentUser === null: onAuthStateChanged ran, and no user is signed in.
-    // currentUser === object: onAuthStateChanged ran, and a user is signed in.
-
-    if (currentUser === null) {
-      // Explicitly no user after Firebase auth check.
-      router.replace('/login');
-    } else if (currentUser !== undefined) {
-      // User is defined (either an object or null), so auth check is complete.
-      // This means onAuthStateChanged has had a chance to run.
-      setIsInitialAuthCheckComplete(true);
-    }
-    // If currentUser is still undefined, we wait for onAuthStateChanged in Providers.tsx
-    // to update it. The loading spinner will be shown.
-    
-  }, [currentUser, router]);
-
-  // Show loading spinner if:
-  // 1. The initial auth check is not yet complete (isInitialAuthCheckComplete is false).
-  //    This covers the case where currentUser is still undefined because onAuthStateChanged hasn't run.
-  // 2. Or if currentUser is null (meaning user is not authenticated, and redirection is about to happen).
-  //    This prevents a brief flash of content for unauthenticated users.
-  if (!isInitialAuthCheckComplete || currentUser === null) {
+  // Show loading spinner if the initial auth check is not yet complete.
+  // If authCheckComplete is true but isAuthenticated is false, 
+  // the useAuthGuard hook handles redirection.
+  // So, we only need to show the spinner while waiting for the check to complete.
+  if (!authCheckComplete) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <LoadingSpinner />
@@ -48,7 +23,15 @@ export default function AuthenticatedLayout({
     );
   }
 
-  // If user is authenticated (currentUser is an object), render the AppLayout with the children.
-  // At this point, isInitialAuthCheckComplete is true and currentUser is not null.
-  return <AppLayout>{children}</AppLayout>;
+  // If auth check is complete and user is authenticated, render the AppLayout.
+  // If auth check is complete and user is NOT authenticated, useAuthGuard has already initiated redirect.
+  // In that brief moment before redirect completes, this component might return null or previous content,
+  // or we can explicitly return null if !isAuthenticated. For simplicity and relying on the hook's redirect:
+  if (isAuthenticated) {
+    return <AppLayout>{children}</AppLayout>;
+  }
+
+  // If authCheckComplete is true, but isAuthenticated is false,
+  // the hook is redirecting. Return null to avoid rendering anything during redirection.
+  return null; 
 }
